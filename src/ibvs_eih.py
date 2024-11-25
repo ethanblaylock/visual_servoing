@@ -36,10 +36,9 @@ class IbvsEih(object):
     """
     Performs eye in hand (eih) image based visual servoing (ibvs). 
     """
-    def __init__(self):
+    def __init__(self, limb):
         # Baxter specific code. You don't need this if you're using another robot.
         # Sets the arm that is used for the servoing
-        limb='right'
         self._baxter = BaxterVS(limb)
 
         # AprilTag specific code. You don't need this if you're using another tracking system.
@@ -91,7 +90,7 @@ class IbvsEih(object):
         """
         self.set_target(final_camera_depth,desired_corners)
         r = rospy.Rate(60)
-        error = 0.6 # please fix this
+
         #np.linalg.norm(self._visual_servo.error)>dist_tol and 
         while not rospy.is_shutdown():
             if not self.new_image_arrived():
@@ -99,8 +98,6 @@ class IbvsEih(object):
             
             # Continue if no corners detected
             marker_corners = self._get_detected_corners()
-            print(marker_corners)
-            marker_pose = self._apriltag_client.pose
             if marker_corners is None:
                 continue
 
@@ -109,20 +106,23 @@ class IbvsEih(object):
                 continue
             # Get control law velocity and transform to body frame, then send to robot
             servo_vel = self._visual_servo.get_next_vel(corners=marker_corners)
-            print("here")
             self._command_velocity(servo_vel)
-            r.sleep()
             self._apriltag_client.corners = None
+            r.sleep()
 
+    def get_target_corners(self, final_camera_depth, size):
+        corner = size/2
+        corner = corner/final_camera_depth
+        return np.array([-corner, corner, corner, corner, corner, -corner, -corner, -corner])
 def main(args):
     rospy.init_node('ibvs_eih')
-    ibvseih = IbvsEih()
+    limb = rospy.get_param("limb")
+    ibvseih = IbvsEih(limb)
     # Set desired camera depth and desired feature coordinates as well as distance from goal before stopping
-    final_camera_depth = 100
-    #desired_corners = np.array([10,10,-10,10,10,-10,-10,-10])
-    desired_corners = np.array([213, 243, 310, 248, 315, 148, 219,143])
+    final_camera_depth = 0.15
 
-    #desired_pose = np.array([-0.3, -0.2, 0.3, 1, 0, 0, 0])
+    desired_corners = ibvseih.get_target_corners(final_camera_depth, 0.0654)
+
     dist_tol = 0.5
     
     ibvseih.move_to_position(final_camera_depth,desired_corners,dist_tol)

@@ -50,7 +50,7 @@ class VisualServoing(object):
         self.error = 1
         # Gain on controller, essentially sets arm speed, although too high of a value will cause the
         # function to diverge.
-        self._lambda=0.01
+        self._lambda=0.5
 
         self._target_set=False
         
@@ -65,11 +65,7 @@ class VisualServoing(object):
         if ideal_corners is not None:
             self._ideal_corners = ideal_corners
         if self._ibvs:
-            #self._ideal_feature = ideal_pose
             self._eih_initialize_target_feature()
-            #t = np.array([-0.3, -0.2, 0.3, 1])
-            #R = quaternion_matrix([1, 0, 0 ,0])
-            #self._L = self._generate_L(t, R)
         if not self._ibvs:
             self._ideal_feature = self._calc_feature(ideal_cam_pose,ideal_cam_rot)
         self._target_set=True
@@ -130,15 +126,13 @@ class VisualServoing(object):
         if self._ibvs:
             target_feature = corners.flatten()
             target_feature = target_feature[:,None]
-            #target_feature = pose.flatten()
             L = self._L
         else:
             L = self._generate_L(t,R)
             target_feature = self._calc_feature(t,R)
         error = target_feature - self._ideal_feature
         
-        self.error = error/1000
-        print(self.error)
+        self.error = error
         vel=-self._lambda*np.dot(np.linalg.pinv(L),self.error)
 
         return vel

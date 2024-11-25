@@ -36,7 +36,7 @@ class BaxterVS(object):
         (self._cam2hand_t,self._cam2hand_R)=transform.lookupTransform('/' + limb + '_hand','/' + limb + '_hand_camera',rospy.Time(0))
         self._cam2hand_t= np.concatenate((np.transpose(np.matrix(self._cam2hand_t)),np.matrix([[0]])),axis=0)
         self._cam2hand_R=quaternion_matrix(self._cam2hand_R)
-
+        self._limb = limb
         self._arm=baxter_interface.limb.Limb(limb)
         self._kin = baxter_kinematics(limb)
 
@@ -48,7 +48,7 @@ class BaxterVS(object):
         cam2hand = generate_frame_transform(self._cam2hand_t[0:3,:],self._cam2hand_R[0:3,0:3],False)
         # Possibly GRASP specific function?
         #hand_pose = baxter.get_right_arm_pose()
-        limb = baxter_interface.Limb('right')
+        limb = baxter_interface.Limb(self._limb)
         hand_pose = limb.endpoint_pose()
         position = hand_pose['position']
         orientation = hand_pose['orientation']

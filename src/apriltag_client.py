@@ -102,16 +102,11 @@ class AprilTagClient(object):
 
         if my_marker is None:
             return
-        # position = apriltag_detections.detections[marker_pos].pose.pose.position
-        # orientation = apriltag_detections.detections[marker_pos].pose.pose.orientation
-        #pose = np.array([position.x,position.y,position.z,orientation.x,orientation.y,orientation.z,orientation.w])
-        #print(pose)
+
+        size = apriltag_detections.detections[marker_pos].size
         (self.marker_t,self.marker_R)=get_t_R(apriltag_detections.detections[marker_pos].pose.pose.position, apriltag_detections.detections[marker_pos].pose.pose.orientation)
-        #self.corners = np.array(apriltag_detections.detections[marker_pos].corners)
-        corners = self.compute_tag_corners(apriltag_detections.detections[marker_pos].pose.pose, apriltag_detections.detections[marker_pos].size, self.K)
-        #print(corners)
+        corners = self.compute_tag_corners(apriltag_detections.detections[marker_pos].pose.pose, size, self.K)
         self.corners = corners
-        #self.pose = pose
         
     def project_to_image_plane(self, corners_3d, camera_matrix):
         """
@@ -159,7 +154,7 @@ class AprilTagClient(object):
             [half_size, half_size, 0],    # corner 2 (bottom-right)
             [-half_size, half_size, 0],   # corner 3 (bottom-left)
         ])
-        
+        #print(tag_corners_local)
         # Convert the tag's rotation quaternion into a rotation matrix
         q = [tag_pose.orientation.x, tag_pose.orientation.y, tag_pose.orientation.z, tag_pose.orientation.w]
         rotation_matrix = quaternion_matrix(q)[:3, :3]  # 3x3 rotation matrix
@@ -169,12 +164,19 @@ class AprilTagClient(object):
         
         # Compute the corners in the camera frame
         tag_corners_camera = []
+        corners_2d = np.zeros(8)
+        counter = 0
         for corner in tag_corners_local:
             # Apply the rotation and translation to the local corners
             corner_camera = np.dot(rotation_matrix, corner) + translation
             tag_corners_camera.append(corner_camera)
+            
+            
+            corners_2d[counter] = corner_camera[0]/corner_camera[2]
+            corners_2d[counter+1] = corner_camera[1]/corner_camera[2]
+            counter += 2
         
         # Project the corners onto the image plane
-        corners_2d = self.project_to_image_plane(tag_corners_camera, camera_matrix)
+        #corners_2d = self.project_to_image_plane(tag_corners_camera, camera_matrix)
         
         return corners_2d

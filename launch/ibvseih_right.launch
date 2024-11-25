@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="ISO-8859-15"?>
+
+<launch>
+  <!-- ibvseih -->
+  <node pkg="visual_servoing" type="ibvs_eih.py" name="ibvs_eih" output="screen" required="true"/>
+    <param name="limb" value='right' />
+<!-- apriltag_detector -->
+  <node pkg="apriltags_ros" type="apriltag_detector_node" name="apriltag_detector_node" required="true" output="screen">
+    <rosparam param="tag_descriptions">[
+      <!-- Add all tags used, with id and length -->
+      {id: 0, size: 0.0654},
+      ]
+    </rosparam>
+    <param name="projected_optics" type="bool" value="true" />
+    <!-- <param name="image_rect" type="string" value="/cameras/right_hand_camera/image" />
+    <param name="camera_info" type="string" value="/cameras/right_hand_camera/camera_info"/> -->
+    <remap from="image_rect" to="/cameras/right_hand_camera/image" />
+    <remap from="camera_info" to="/cameras/right_hand_camera/camera_info" />
+
+  </node>
+
+</launch>
