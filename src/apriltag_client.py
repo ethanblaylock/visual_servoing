@@ -43,6 +43,7 @@ class AprilTagClient(object):
         self.marker_t=None
         self.marker_R=None
         self.corners = None
+        self.depths = None
         self.image = None
         self.pose = None
         self._bridge = CvBridge()
@@ -105,8 +106,9 @@ class AprilTagClient(object):
 
         size = apriltag_detections.detections[marker_pos].size
         (self.marker_t,self.marker_R)=get_t_R(apriltag_detections.detections[marker_pos].pose.pose.position, apriltag_detections.detections[marker_pos].pose.pose.orientation)
-        corners = self.compute_tag_corners(apriltag_detections.detections[marker_pos].pose.pose, size, self.K)
+        corners, depths = self.compute_tag_corners(apriltag_detections.detections[marker_pos].pose.pose, size, self.K)
         self.corners = corners
+        self.depths = depths
         
     def project_to_image_plane(self, corners_3d, camera_matrix):
         """
@@ -165,7 +167,9 @@ class AprilTagClient(object):
         # Compute the corners in the camera frame
         tag_corners_camera = []
         corners_2d = np.zeros(8)
+        depths = np.zeros(4)
         counter = 0
+        index = 0
         for corner in tag_corners_local:
             # Apply the rotation and translation to the local corners
             corner_camera = np.dot(rotation_matrix, corner) + translation
@@ -174,9 +178,12 @@ class AprilTagClient(object):
             
             corners_2d[counter] = corner_camera[0]/corner_camera[2]
             corners_2d[counter+1] = corner_camera[1]/corner_camera[2]
+            
+            depths[index] = corner_camera[2]
             counter += 2
+            index += 1
         
         # Project the corners onto the image plane
         #corners_2d = self.project_to_image_plane(tag_corners_camera, camera_matrix)
         
-        return corners_2d
+        return corners_2d, depths
