@@ -90,6 +90,15 @@ class VisualServoing(object):
             Z=p[2]
             self._L[i*2:i*2+2,:]=np.matrix([[-1/Z,0,x/Z,x*y,-(1+x*x),y],[0,-1/Z,y/Z,1+y*y,-x*y,-x]])
 
+    def _calc_L(self, corners, depths):
+        L=np.matlib.zeros((2*4,6))
+        for i in range(0,4):
+            x=corners[i*2]
+            y=corners[i*2+1]                     
+            Z=depths[i]
+            L[i*2:i*2+2,:]=np.matrix([[-1/Z,0,x/Z,x*y,-(1+x*x),y],[0,-1/Z,y/Z,1+y*y,-x*y,-x]])
+        return L
+    
     def _generate_L(self,t,R):
         """
         Used for pbvs only. Generate the interaction matrix L at each step.
@@ -116,7 +125,7 @@ class VisualServoing(object):
             feature=np.concatenate((t[0:3,0],theta*u[:,None]),axis=0)
         return feature
     
-    def get_next_vel(self,t=None,R=None,corners=None):
+    def get_next_vel(self,t=None,R=None,corners=None, depths=None):
         """
         Computes the servo law mandated velocity given a current pose or set of image coordinates.
         At least one of either t and R or corners must be input.
@@ -126,13 +135,13 @@ class VisualServoing(object):
         if self._ibvs:
             target_feature = corners.flatten()
             target_feature = target_feature[:,None]
-            L = self._L
+            L = self._calc_L(corners, depths)
         else:
             L = self._generate_L(t,R)
             target_feature = self._calc_feature(t,R)
         error = target_feature - self._ideal_feature
         
         self.error = error
-        vel=-self._lambda*np.dot(np.linalg.pinv(L),self.error)
+        vel=-self._lambda*np.matmul(np.linalg.pinv(L + self._L)/2,self.error)
 
         return vel

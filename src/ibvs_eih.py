@@ -105,7 +105,7 @@ class IbvsEih(object):
             if not self._visual_servo._target_set:
                 continue
             # Get control law velocity and transform to body frame, then send to robot
-            servo_vel = self._visual_servo.get_next_vel(corners=marker_corners)
+            servo_vel = self._visual_servo.get_next_vel(corners=marker_corners, depth=self._apriltag_client.depth)
             self._command_velocity(servo_vel)
             self._apriltag_client.corners = None
             r.sleep()
@@ -119,7 +119,7 @@ def main(args):
     limb = rospy.get_param("limb")
     ibvseih = IbvsEih(limb)
     # Set desired camera depth and desired feature coordinates as well as distance from goal before stopping
-    final_camera_depth = 0.15
+    final_camera_depth = 0.2
 
     desired_corners = ibvseih.get_target_corners(final_camera_depth, 0.0654)
 
