@@ -105,7 +105,7 @@ class IbvsEih(object):
             if not self._visual_servo._target_set:
                 continue
             # Get control law velocity and transform to body frame, then send to robot
-            servo_vel = self._visual_servo.get_next_vel(corners=marker_corners, depth=self._apriltag_client.depth)
+            servo_vel = self._visual_servo.get_next_vel(corners=marker_corners, depths=self._apriltag_client.depths)
             self._command_velocity(servo_vel)
             self._apriltag_client.corners = None
             r.sleep()
